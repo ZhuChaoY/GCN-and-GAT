@@ -172,6 +172,8 @@ class GNN(): #2 layers
 
 
     def run(self, N): 
+        """Repeat N times run and calculate mean accuracy."""
+        
         Acc = []
         for i in range(N):            
             config = tf.ConfigProto() 
