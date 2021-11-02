@@ -202,5 +202,5 @@ class GNN(): #2 layers
                 self._train(sess)
                 Acc.append(self._test(sess))
         
-        print('\n>>  Result of {} Runs: {:.4f} ({:.4f})'.format(N,
+        print('\n>>  Result of {} Runs: {:.3f} ({:.3f})'.format(N,
               np.mean(Acc), np.std(Acc)))
