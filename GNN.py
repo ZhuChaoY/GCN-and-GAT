@@ -93,7 +93,9 @@ class GNN(): #2 layers
         return y
         
     
-    def common_construct(self):        
+    def common_structure(self):        
+        """Common structure of GCN and GAT."""
+        
         tf.reset_default_graph()
         self.label = tf.placeholder(tf.float32, [self.n_node, self.out_dim])
         self.mask = tf.placeholder(tf.float32, [self.n_node])
@@ -110,6 +112,8 @@ class GNN(): #2 layers
         
                 
     def _train(self, sess):
+        """Training Process."""
+        
         eps = self.epoches
         print('              Train          Dev')
         print('    EPOCH  LOSS   ACC    LOSS   ACC   time   TIME')
@@ -147,6 +151,8 @@ class GNN(): #2 layers
             
     
     def _evaluate(self, sess):
+        """Validation Process."""
+        
         feed_dict = {self.label: self.y_dev, self.mask: self.m_dev, 
                      self.keep: 1.0}
         feed_dict.update(self.feed_dict)
@@ -154,6 +160,8 @@ class GNN(): #2 layers
         
 
     def _test(self, sess):
+        """Test Process."""
+        
         feed_dict = {self.label: self.y_test, self.mask: self.m_test, 
                      self.keep: 1.0}
         feed_dict.update(self.feed_dict)
@@ -168,7 +176,7 @@ class GNN(): #2 layers
         for i in range(N):            
             config = tf.ConfigProto() 
             config.gpu_options.allow_growth = True
-            self.common_construct()
+            self.common_structure()
             if i == 0:       
                 print('\n    *Hidden Dim     : {}'.format(self.h_dim))
                 if 'n_head' in self.args:
