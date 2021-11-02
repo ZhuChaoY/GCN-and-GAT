@@ -35,7 +35,7 @@ class GNN(): #2 layers
         """
 
         for key in ['x', 'y', 'tx', 'ty', 'allx', 'ally', 'graph']:
-            with open('data/ind.{}.{}'.format(self.dataset, key), 'rb') as f:
+            with open('dataset/ind.{}.{}'.format(self.dataset, key), 'rb') as f:
                 _ = pickle.load(f, encoding = 'latin1')
                 exec('self.{} = _'.format(key))
         self.n_train = self.x.shape[0]
