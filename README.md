@@ -1,5 +1,5 @@
 # GCN-GAT
-A version of GCN and GAT.
+An implementation of GCN and GAT.
 
 (1) GCN: SEMI-SUPERVISED CLASSIFICATION WITH GRAPH CONVOLUTIONAL NETWORKS (https://github.com/tkipf/gcn)   
 ```
