@@ -1,84 +1,24 @@
-import os
-import time
-import pickle
 import numpy as np
 import networkx as nx
 import scipy.sparse as sp
 import tensorflow.compat.v1 as tf
+from GNN import GNN
 
 
-class GAT(): #2 LAYER
+class GAT(GNN): #2 layers
+    """@ GRAPH ATTENTION NETWORKS"""
+
     def __init__(self, args):
-        self.args = args
-        for key, value in self.args.items():
-            if type(value) == str:
-                exec('self.{} = "{}"'.format(key, value))
-            else:
-                exec('self.{} = {}'.format(key, value))
-        
+        super().__init__(args)
+        print('\n' + '==' * 4 + ' < GAT > && < {} > '.format(self.dataset) + \
+              '==' * 4)  
         self.load_data()
-        self.construct_model()
-        
-    
-    def load_data(self): 
-        """
-        Loads input data from gcn/data directory
-        x => the feature vectors of the training instances;
-        y => the one-hot labels of the labeled training instances;
-        tx => the feature vectors of the test instances;
-        ty => the one-hot labels of the test instances;
-        allx => the feature vectors of both labeled and unlabeled training 
-                instances (superset of x);
-        ally => the labels for instances in allx;
-        graph => format of {index: [index_of_neighbor_nodes]};
-        test.index => the indices of test instances in graph for the inductive
-                      setting as list object.
-        All objects above must be saved using python pickle module.
-        """
-
-        for key in ['x', 'y', 'tx', 'ty', 'allx', 'ally', 'graph']:
-            with open('data/ind.{}.{}'.format(self.dataset, key), 'rb') as f:
-                _ = pickle.load(f, encoding = 'latin1')
-                exec('self.{} = _'.format(key))
-        self.n_train = self.x.shape[0]
-        self.n_val = 500
-        self.in_dim = self.x.shape[1]
-        self.out_dim = self.y.shape[1]
-        self.n_node = len(self.graph)
-        
-        test_reorder = []
-        for line in open('data/ind.{}.test.index'.format(self.dataset)):
-            test_reorder.append(int(line.strip()))
-        train_range = range(self.n_train)
-        val_range = range(self.n_train, self.n_train + self.n_val)
-        test_range = np.sort(test_reorder)
-        
-        if self.dataset == 'citeseer':
-            n_test = max(test_reorder) + 1 - min(test_reorder)
-            tx_extended = sp.lil_matrix((n_test, self.in_dim))
-            tx_extended[test_range - min(test_range), :] = self.tx
-            self.tx = tx_extended
-            ty_extended = np.zeros((n_test, self.out_dim))
-            ty_extended[test_range - min(test_range), :] = self.ty
-            self.ty = ty_extended
-    
-        self.X = self.get_X(test_reorder, test_range)
-        self.A = self.get_A()
         self.B = self.get_B(nhood = 1)
-        self.m_train = self.get_m(train_range)
-        self.m_val = self.get_m(val_range)
-        self.m_test = self.get_m(test_range)
-        self.Y = np.vstack((self.ally, self.ty))
-        self.Y[test_reorder, :] = self.Y[test_range, :]
-        self.y_train = self.get_y(train_range)
-        self.y_val = self.get_y(val_range)
-        self.y_test = self.get_y(test_range)
 
     
     def get_X(self, test_reorder, test_range):
-        """
-        Get feature matrix, row-normalize and convert to tuple representation.
-        """
+        """Get feature matrix, row-normalize."""
+        
         X = sp.vstack((self.allx, self.tx)).tolil()
         X[test_reorder, :] = X[test_range, :]
         rowsum = np.array(X.sum(1))
@@ -91,12 +31,14 @@ class GAT(): #2 LAYER
 
     def get_A(self):
         """Get dense adjacency matrix."""
+        
         A = nx.adjacency_matrix(nx.from_dict_of_lists(self.graph)).todense()
         return A
     
     
     def get_B(self, nhood):
         """Get adjacency matrix bias with nhood neiborhood."""
+        
         B = np.eye(self.n_node)
         for _ in range(nhood):
             B = np.matmul(B, (self.A + np.eye(self.n_node)))
@@ -107,131 +49,39 @@ class GAT(): #2 LAYER
                 else:
                     B[i, j] = -1e9
         return B
-    
-
-    def get_m(self, key_range):
-        """Get mask indexes, normalized to sum 1."""
-        m = np.array([x in key_range for x in range(self.n_node)])
-        return m / np.mean(m)
-    
-    
-    def get_y(self, key_range):
-        """Get masked label."""
-        y = self.Y.copy()
-        y[list(set(range(self.n_node)) - set(key_range)), :] = 0.0
-        return y
 
 
-    def construct_model(self):
-        """Construct 2 layer GAT."""
+    def gnn_layer(self):
+        """A layer of GAT structure."""
         
-        tf.reset_default_graph()        
-        self.input = tf.placeholder(tf.float32, [self.n_node, self.in_dim])
         self.bias = tf.placeholder(tf.float32, [self.n_node, self.n_node])
-        self.label = tf.placeholder(tf.float32, [self.n_node, self.out_dim])
-        self.mask = tf.placeholder(tf.float32, [self.n_node])
-        self.keep = tf.placeholder(tf.float32)
+        self.input = tf.placeholder(tf.float32, [self.n_node, self.in_dim])
+        self.feed_dict = {self.input: self.X, self.bias: self.B}
         
-        with tf.variable_scope('GAT'):
-            pre_out = self.input
-            for i in range(len(self.hidden)):
-                with tf.variable_scope('layer_' + str(i + 1)):
-                    pre_out = tf.concat([self.att_layer(pre_out, 
-                              self.hidden[i], tf.nn.elu) for _ in \
-                              range(self.n_head[i])], axis = -1)
-            with tf.variable_scope('layer_' + str(len(self.hidden) + 1)):            
-                self.output = tf.add_n([self.att_layer(pre_out, self.out_dim,
-                              lambda x: x) for _ in range(self.n_head[-1])]) /\
-                              self.n_head[-1]
-        
-        self.loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits( \
-                    logits = self.output, labels = self.label) * self.mask)
-        self.loss += self.l2 * tf.add_n([tf.nn.l2_loss(v) for v in \
-                                tf.trainable_variables() if v.name not in
-                                ['bias', 'gamma', 'b', 'g', 'beta']])
-        self.accuracy = tf.reduce_mean(tf.cast(tf.equal(tf.argmax(self.output,
-                        1), tf.argmax(self.label, 1)), tf.float32) * self.mask)
-        self.train_op = tf.train.AdamOptimizer(self.l_r).minimize(self.loss)
+        with tf.variable_scope('layer1'):
+            h_out = tf.concat([self.gat_layer(self.input, self.h_dim,
+                    tf.nn.elu) for _ in range(self.n_head[0])], axis = -1)
+        with tf.variable_scope('layer2'):            
+            output = tf.add_n([self.gat_layer(h_out, self.out_dim, None) \
+                     for _ in range(self.n_head[1])]) / self.n_head[1]
                 
-
-    def att_layer(self, _input, out_dim, act):
-        """Attention layer"""
-        with tf.name_scope('attnention'):
-            _input = tf.expand_dims(tf.nn.dropout(_input, self.keep), 0)
-            fts = tf.layers.conv1d(_input, out_dim, 1, use_bias = False)
-            f_1 = tf.layers.conv1d(fts, 1, 1)
-            f_2 = tf.layers.conv1d(fts, 1, 1)
-            logits = f_1 + tf.transpose(f_2, [0, 2, 1])
-            coefs = tf.nn.dropout(tf.nn.softmax(tf.nn.leaky_relu(logits) + \
-                                                self.bias), self.keep)
-            # out = act(tf.nn.bias_add(tf.matmul(coefs, fts)))
-            
-            out = act(tf.matmul(coefs, tf.nn.dropout(fts, self.keep)))
-            out = tf.squeeze(out)
-            return out
-
-
-    def _train(self, sess):
-        t0 = t1 = time.time()
-        print('              Train          Val')
-        print('    EPOCH  LOSS   ACC    LOSS   ACC   time   TIME')
+        loss = tf.add_n([tf.nn.l2_loss(v) for v in tf.trainable_variables() if
+                         'bias' not in v.name])
         
-        Loss_val = []
-        for epoch in range(self.epochs):
-            print('    {:^5}'.format(epoch + 1), end = '')
-            feed_dict = {self.input: self.X, self.bias: self.B,
-                         self.label: self.y_train, self.mask: self.m_train,
-                         self.keep: 1.0 - self.dropout}
-            _, loss_train, acc_train = \
-                sess.run([self.train_op, self.loss, self.accuracy], feed_dict)
-            loss_val, acc_val = self._evaluate(sess)
-            Loss_val.append(loss_val)
-            _t = time.time()
-            print(' {:^6.4f} {:^5.3f}  {:^6.4f} {:^5.3f} {:^6.2f} {:^6.2f}'. \
-                  format(loss_train, acc_train, loss_val, acc_val,
-                         _t - t1, _t - t0))
-            t1 = _t
-            
-            if epoch > self.early_stop and \
-               loss_val > np.mean(Loss_val[-(self.early_stop + 1): -1]):
-                   print('\n>>  Early stopping...')
-                   break
-        
-        loss_test, acc_test = self._test(sess)
-        print('\n>>  Test Result.')
-        print('    Loss: {:.4f}\n    Acc : {:.3f}'.format(loss_test, acc_test))
-            
-           
-    def _evaluate(self, sess):
-        feed_dict = {self.input: self.X, self.bias: self.B,
-                     self.label: self.y_val, self.mask: self.m_val, 
-                      self.keep: 1.0}
-        return sess.run([self.loss, self.accuracy], feed_dict)
-        
-
-    def _test(self, sess):
-        feed_dict = {self.input: self.X, self.bias: self.B,
-                     self.label: self.y_test, self.mask: self.m_test, 
-                     self.keep: 1.0}
-        return sess.run([self.loss, self.accuracy], feed_dict)
-
-
-args = {'dataset' : ['cora', 'citeseer', 'pubmed'][0],
-        'l_r' : 5e-3,
-        'epochs' : 1000,
-        'hidden' : [8],
-        'n_head' : [8, 1],
-        'dropout' : 0.6,
-        'l2' : 5e-4,
-        'early_stop' : 50}
-
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-os.environ['CUDA_VISIBLE_DEVICES'] = '2' 
-config = tf.ConfigProto() 
-config.gpu_options.allow_growth = True
-
-model = GAT(args)
-with tf.Session(config = config) as sess:
-    tf.global_variables_initializer().run()   
-    model._train(sess)
+        return output, loss
     
+
+    def gat_layer(self, _input, out_dim, act):
+        """A layer of GAT"""
+        
+        _input = tf.expand_dims(_input, 0)
+        fts = tf.layers.conv1d(_input, out_dim, 1, use_bias = False)
+        f_1 = tf.layers.conv1d(fts, 1, 1)
+        f_2 = tf.layers.conv1d(fts, 1, 1)
+        logits = f_1 + tf.transpose(f_2, [0, 2, 1])
+        coefs = tf.nn.dropout(tf.nn.softmax(tf.nn.leaky_relu(logits) + \
+                                            self.bias), self.keep)
+        out = tf.matmul(coefs, tf.nn.dropout(fts, self.keep))
+        if act:
+            out = act(out)
+        return tf.squeeze(out)
