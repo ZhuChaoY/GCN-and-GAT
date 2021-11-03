@@ -1,5 +1,5 @@
 # GCN-GAT
-An implementation of GCN and GAT.
+An implementation of GCN and GAT by tensorflow.
 
 # Reference
 (1) GCN: SEMI-SUPERVISED CLASSIFICATION WITH GRAPH CONVOLUTIONAL NETWORKS (https://github.com/tkipf/gcn)   
