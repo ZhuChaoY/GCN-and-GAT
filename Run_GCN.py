@@ -11,7 +11,7 @@ parser.add_argument('--h_dim', type = int, default = 16,
 parser.add_argument('--dropout', type = float, default = 0.5, 
                     help = 'dropout rate')
 parser.add_argument('--l2', type = float, default = 5e-4,
-                    help = 'hidden dim')
+                    help = 'l2 penalty coefficient')
 parser.add_argument('--l_r', type = float, default = 1e-2, 
                     help = 'learning rate')
 parser.add_argument('--epoches', type = int, default = 200,

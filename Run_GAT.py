@@ -13,7 +13,7 @@ parser.add_argument('--n_head', type = list, default = [8, 1],
 parser.add_argument('--dropout', type = float, default = 0.6, 
                     help = 'dropout rate')
 parser.add_argument('--l2', type = float, default = 5e-4,
-                    help = 'hidden dim')
+                    help = 'l2 penalty coefficient')
 parser.add_argument('--l_r', type = float, default = 5e-3, 
                     help = 'learning rate')
 parser.add_argument('--epoches', type = int, default = 400,
@@ -28,4 +28,3 @@ os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 model = GAT(args)
 model.run(10)
-        
