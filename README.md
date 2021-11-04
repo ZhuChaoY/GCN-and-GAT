@@ -6,7 +6,7 @@ An implementation of GCN and GAT by tensorflow.
 (2) GAT: GRAPH ATTENTION NETWORKS (https://github.com/PetarV-/GAT)
 
 # Dataset
-**citeseer** 
+**citeseer**   
 **cora**   
 **pubmed**  
 
