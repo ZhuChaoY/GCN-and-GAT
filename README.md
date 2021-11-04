@@ -18,4 +18,4 @@ python Run_GAT.py --dataset citeseer --h_dim 8 --n_head_1 8 --n_head_2 1 --dropo
 |        | **citeseer**  |   **cora**    |   **pubmed**  |  
 |   --   |      --       |      --       |      --       |  
 |**GCN** | 0.712 (0.005) | 0.811 (0.008) | 0.787 (0.002) |   
-|**GAT** | 0.714 (0.003) | 0.815 (0.006) |               |   
+|**GAT** | 0.714 (0.003) | 0.815 (0.006) | out of memory |   
