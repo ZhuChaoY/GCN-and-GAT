@@ -181,8 +181,9 @@ class GNN(): #2 layers
             self.common_structure()
             if i == 0:       
                 print('\n    *Hidden Dim     : {}'.format(self.h_dim))
-                if 'n_head' in self.args:
-                    print('    *Number of Head : {}'.format(self.n_head))
+                if 'n_head_1' in self.args:
+                    print('    *Head of layer1: {}'.format(self.n_head_1))
+                    print('    *Head of layer2: {}'.format(self.n_head_2))
                 print('    *Drop Out Rate  : {}'.format(self.dropout))
                 print('    *L2 Rate        : {}'.format(self.l2))
                 print('    *Learning Rate  : {}'.format(self.l_r))

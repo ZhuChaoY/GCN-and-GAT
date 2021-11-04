@@ -61,10 +61,10 @@ class GAT(GNN): #2 layers
         with tf.variable_scope('GAT'):
             with tf.variable_scope('layer1'):
                 h_out = tf.concat([self.gat_layer(self.input, self.h_dim,
-                        tf.nn.elu) for _ in range(self.n_head[0])], axis = -1)
+                        tf.nn.elu) for _ in range(self.n_head_1)], axis = -1)
             with tf.variable_scope('layer2'):            
                 output = tf.add_n([self.gat_layer(h_out, self.out_dim, None) \
-                         for _ in range(self.n_head[1])]) / self.n_head[1]
+                         for _ in range(self.n_head_2)]) / self.n_head_2
                 
         loss = tf.add_n([tf.nn.l2_loss(v) for v in tf.trainable_variables() if
                          'kernel' in v.name])
@@ -73,7 +73,7 @@ class GAT(GNN): #2 layers
     
 
     def gat_layer(self, _input, out_dim, act):
-        """A layer of GAT"""
+        """A layer of GAT."""
         
         _input = tf.expand_dims(_input, 0)
         fts = tf.layers.conv1d(_input, out_dim, 1, use_bias = False)
