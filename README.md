@@ -1,4 +1,4 @@
-# GCN-GAT
+# GCN and GAT
 An implementation of GCN and GAT by tensorflow.
 
 ## Reference
