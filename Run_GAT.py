@@ -8,8 +8,10 @@ parser.add_argument('--dataset', type = str, default = 'citeseer',
                     help = 'dataset name') #'citeseer', 'cora', 'pubmed'
 parser.add_argument('--h_dim', type = int, default = 8,
                     help = 'hidden dim')
-parser.add_argument('--n_head', type = list, default = [8, 1],
-                    help = 'number of head')
+parser.add_argument('--n_head_1', type = int, default = 8,
+                    help = 'number of head of layer1')
+parser.add_argument('--n_head_2', type = int, default = 1,
+                    help = 'number of head of layer2')
 parser.add_argument('--dropout', type = float, default = 0.6, 
                     help = 'dropout rate')
 parser.add_argument('--l2', type = float, default = 5e-4,
