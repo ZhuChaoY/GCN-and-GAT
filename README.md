@@ -16,5 +16,6 @@ $ python Run_GAT.py --dataset citeseer --h_dim 8 --n_head [8, 1] --dropout 0.6 -
 
 # Results (10 runs)                    
         |  *citeseer**  |   **cora**    |  **pubmed**  
+ ----   |     ----      |     ----      |     ----
 **GCN** | 0.712 (0.005) | 0.811 (0.008) | 0.787 (0.002)  
 **GAT** | 0.714 (0.003) | 0.815 (0.006) |
