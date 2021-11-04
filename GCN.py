@@ -54,24 +54,25 @@ class GCN(GNN): #2 layers
                                            [self.n_node, self.in_dim])
         self.feed_dict = {self.input: self.X, self.support: self.A}
             
-        with tf.variable_scope('layer1'):
-            K1 = np.sqrt(6.0 / (self.in_dim + self.h_dim))
-            w1 = tf.get_variable('weight', initializer = \
-                 tf.random_uniform([self.in_dim, self.h_dim], -K1, K1))
-            h_out = self.gcn_layer(self.input, w1, tf.nn.relu, True)
-        with tf.variable_scope('layer2'):
-            K2 = np.sqrt(6.0 / (self.h_dim + self.out_dim))
-            w2 = tf.get_variable('weight', initializer = \
-                 tf.random_uniform([self.h_dim, self.out_dim], -K2, K2))
-            output = self.gcn_layer(h_out, w2, None, False)
+        with tf.variable_scope('GCN'):
+            with tf.variable_scope('layer1'):
+                h_out = self.gcn_layer(self.input, self.in_dim, self.h_dim,
+                                       tf.nn.relu, True)
+            with tf.variable_scope('layer2'):
+                output = self.gcn_layer(h_out, self.h_dim, self.out_dim,
+                                        None, False)
                             
-            loss = tf.nn.l2_loss(w1) + tf.nn.l2_loss(w2)
+        loss = tf.add_n([tf.nn.l2_loss(v) for v in tf.trainable_variables()])
             
         return output, loss
 
     
-    def gcn_layer(self, _input, w, act, is_sparse):
+    def gcn_layer(self, _input, in_dim, out_dim, act, is_sparse):
         """A layer of GCN."""
+        
+        K = np.sqrt(6.0 / (in_dim + out_dim))
+        w = tf.get_variable('weight', initializer = \
+            tf.random_uniform([in_dim, out_dim], -K, K))
         
         if is_sparse:
             tmp = tf.sparse_tensor_dense_matmul(_input, w)

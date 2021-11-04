@@ -58,15 +58,16 @@ class GAT(GNN): #2 layers
         self.input = tf.placeholder(tf.float32, [self.n_node, self.in_dim])
         self.feed_dict = {self.input: self.X, self.bias: self.B}
         
-        with tf.variable_scope('layer1'):
-            h_out = tf.concat([self.gat_layer(self.input, self.h_dim,
-                    tf.nn.elu) for _ in range(self.n_head[0])], axis = -1)
-        with tf.variable_scope('layer2'):            
-            output = tf.add_n([self.gat_layer(h_out, self.out_dim, None) \
-                     for _ in range(self.n_head[1])]) / self.n_head[1]
+        with tf.variable_scope('GAT'):
+            with tf.variable_scope('layer1'):
+                h_out = tf.concat([self.gat_layer(self.input, self.h_dim,
+                        tf.nn.elu) for _ in range(self.n_head[0])], axis = -1)
+            with tf.variable_scope('layer2'):            
+                output = tf.add_n([self.gat_layer(h_out, self.out_dim, None) \
+                         for _ in range(self.n_head[1])]) / self.n_head[1]
                 
         loss = tf.add_n([tf.nn.l2_loss(v) for v in tf.trainable_variables() if
-                         'bias' not in v.name])
+                         'kernel' in v.name])
         
         return output, loss
     

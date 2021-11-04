@@ -48,7 +48,7 @@ class GNN(): #2 layers
         print('    #Edge  : {}'.format(self.n_edge))
 
         test_reorder = []
-        for line in open('data/ind.{}.test.index'.format(self.dataset)):
+        for line in open('dataset/ind.{}.test.index'.format(self.dataset)):
             test_reorder.append(int(line.strip()))
         train_range = range(self.n_train)
         dev_range = range(self.n_train, self.n_train + self.n_dev)
@@ -68,14 +68,14 @@ class GNN(): #2 layers
     
         self.X = self.get_X(test_reorder, test_range)
         self.A = self.get_A()
-        self.m_train = self.get_m(train_range)
-        self.m_dev = self.get_m(dev_range)
-        self.m_test = self.get_m(test_range)
+        self.train_m = self.get_m(train_range)
+        self.dev_m = self.get_m(dev_range)
+        self.test_m = self.get_m(test_range)
         self.Y = np.vstack((self.ally, self.ty))
         self.Y[test_reorder, :] = self.Y[test_range, :]
-        self.y_train = self.get_y(train_range)
-        self.y_dev = self.get_y(dev_range)
-        self.y_test = self.get_y(test_range)
+        self.train_y = self.get_y(train_range)
+        self.dev_y = self.get_y(dev_range)
+        self.test_y = self.get_y(test_range)
     
     
     def get_m(self, key_range):
@@ -120,30 +120,30 @@ class GNN(): #2 layers
         
         temp_kpi, KPI = [], []
         t0 = t1 = time.time()
-        for epoch in range(eps):
-            feed_dict = {self.label: self.y_train, self.mask: self.m_train,
+        for ep in range(eps):
+            feed_dict = {self.label: self.train_y, self.mask: self.train_m,
                          self.keep: 1.0 - self.dropout}
             feed_dict.update(self.feed_dict)
-            _, loss_train, acc_train = \
+            _, train_loss, train_acc = \
                 sess.run([self.train_op, self.loss, self.accuracy], feed_dict)
-            loss_dev, acc_dev = self._evaluate(sess)
-            if (epoch + 1) % 20 == 0:
+            dev_loss, dev_acc = self._evaluate(sess)
+            if (ep + 1) % 20 == 0:
                 _t = time.time()
                 print('    {:^5} {:^6.4f} {:^5.3f}  {:^6.4f} {:^5.3f}' \
-                      ' {:^6.2f} {:^6.2f}'.format(epoch + 1, loss_train,
-                      acc_train, loss_dev, acc_dev, _t - t1, _t - t0))
+                      ' {:^6.2f} {:^6.2f}'.format(ep + 1, train_loss,
+                      train_acc, dev_loss, dev_acc, _t - t1, _t - t0))
                 t1 = _t
         
-            if epoch == 0 or loss_dev < KPI[-1]:
+            if ep == 0 or dev_loss < KPI[-1]:
                 if len(temp_kpi) > 0:
                     KPI.extend(temp_kpi)
                     temp_kpi = []
-                KPI.append(loss_dev)
+                KPI.append(dev_loss)
             else:
                 if len(temp_kpi) == self.earlystop:
                     break
                 else:
-                    temp_kpi.append(loss_dev)
+                    temp_kpi.append(dev_loss)
                     
         best_ep = len(KPI)
         if best_ep != eps:
@@ -153,7 +153,7 @@ class GNN(): #2 layers
     def _evaluate(self, sess):
         """Validation Process."""
         
-        feed_dict = {self.label: self.y_dev, self.mask: self.m_dev, 
+        feed_dict = {self.label: self.dev_y, self.mask: self.dev_m, 
                      self.keep: 1.0}
         feed_dict.update(self.feed_dict)
         return sess.run([self.loss, self.accuracy], feed_dict)
@@ -162,13 +162,13 @@ class GNN(): #2 layers
     def _test(self, sess):
         """Test Process."""
         
-        feed_dict = {self.label: self.y_test, self.mask: self.m_test, 
+        feed_dict = {self.label: self.test_y, self.mask: self.test_m,
                      self.keep: 1.0}
         feed_dict.update(self.feed_dict)
-        loss_test, acc_test = sess.run([self.loss, self.accuracy], feed_dict)
+        test_loss, test_acc = sess.run([self.loss, self.accuracy], feed_dict)
         print('\n    Test : [ Loss: {:.4f} ; Acc : {:.3f} ]\n'. \
-              format(loss_test, acc_test))
-        return acc_test
+              format(test_loss, test_acc))
+        return test_acc
 
 
     def run(self, N): 

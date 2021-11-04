@@ -4,8 +4,8 @@ from GAT import GAT
 
 
 parser = argparse.ArgumentParser(description = 'GAT')
-parser.add_argument('--dataset', type = str, default = 'cora',
-                    help = 'dataset name') #'cora', 'citeseer', 'pubmed'
+parser.add_argument('--dataset', type = str, default = 'citeseer',
+                    help = 'dataset name') #'citeseer', 'cora', 'pubmed'
 parser.add_argument('--h_dim', type = int, default = 8,
                     help = 'hidden dim')
 parser.add_argument('--n_head', type = list, default = [8, 1],
@@ -16,7 +16,7 @@ parser.add_argument('--l2', type = float, default = 5e-4,
                     help = 'l2 penalty coefficient')
 parser.add_argument('--l_r', type = float, default = 5e-3, 
                     help = 'learning rate')
-parser.add_argument('--epoches', type = int, default = 400,
+parser.add_argument('--epoches', type = int, default = 200,
                     help = 'training epoches')
 parser.add_argument('--earlystop', type = int, default = 3,
                     help = 'earlystop steps')

@@ -4,8 +4,8 @@ from GCN import GCN
 
 
 parser = argparse.ArgumentParser(description = 'GCN')
-parser.add_argument('--dataset', type = str, default = 'cora',
-                    help = 'dataset name') #'cora', 'citeseer', 'pubmed'
+parser.add_argument('--dataset', type = str, default = 'citeseer',
+                    help = 'dataset name') #'citeseer', 'cora', 'pubmed'
 parser.add_argument('--h_dim', type = int, default = 16,
                     help = 'hidden dim')
 parser.add_argument('--dropout', type = float, default = 0.5, 
