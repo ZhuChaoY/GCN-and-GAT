@@ -2,8 +2,8 @@
 An implementation of GCN and GAT by tensorflow.
 
 ## Reference
-(1) GCN: [SEMI-SUPERVISED CLASSIFICATION WITH GRAPH CONVOLUTIONAL NETWORKS](https://arxiv.org/pdf/1609.02907.pdf) (https://github.com/tkipf/gcn)   
-(2) GAT: [GRAPH ATTENTION NETWORKS](https://arxiv.org/pdf/1710.10903v1.pdf) (https://github.com/PetarV-/GAT)   
+(1) GCN: [SEMI-SUPERVISED CLASSIFICATION WITH GRAPH CONVOLUTIONAL NETWORKS](https://arxiv.org/pdf/1609.02907.pdf) (Code: https://github.com/tkipf/gcn)   
+(2) GAT: [GRAPH ATTENTION NETWORKS](https://arxiv.org/pdf/1710.10903v1.pdf) (Code: https://github.com/PetarV-/GAT)   
 
 ## Results (10 runs)                    
 |        | **citeseer**  |   **cora**    |   **pubmed**  |  
