@@ -1,7 +1,7 @@
 import numpy as np
 import networkx as nx
 import scipy.sparse as sp
-import tensorflow.compat.v1 as tf
+import tensorflow as tf
 from GNN import GNN
 
 
@@ -13,7 +13,7 @@ class GAT(GNN): #2 layers
         print('\n' + '==' * 4 + ' < GAT > && < {} > '.format(self.dataset) + \
               '==' * 4)  
         self.load_data()
-        self.B = self.get_B(nhood = 1)
+        self.B = self.get_B()
 
     
     def get_X(self, test_reorder, test_range):
@@ -35,13 +35,11 @@ class GAT(GNN): #2 layers
         A = nx.adjacency_matrix(nx.from_dict_of_lists(self.graph)).todense()
         return A
     
-    
-    def get_B(self, nhood):
-        """Get adjacency matrix bias with nhood neiborhood."""
+
+    def get_B(self):
+        """Get adjacency matrix bias with  neiborhood."""
         
-        B = np.eye(self.n_node)
-        for _ in range(nhood):
-            B = np.matmul(B, (self.A + np.eye(self.n_node)))
+        B = np.matmul(np.eye(self.n_node), (self.A + np.eye(self.n_node)))
         for i in range(self.n_node):
             for j in range(self.n_node):
                 if B[i, j] > 0.0:
@@ -49,7 +47,7 @@ class GAT(GNN): #2 layers
                 else:
                     B[i, j] = -1e9
         return B
-
+    
 
     def gnn_layer(self):
         """A layer of GAT structure."""
@@ -61,7 +59,7 @@ class GAT(GNN): #2 layers
         with tf.variable_scope('GAT'):
             with tf.variable_scope('layer1'):
                 h_out = tf.concat([self.gat_layer(self.input, self.h_dim,
-                        tf.nn.elu) for _ in range(self.n_head_1)], axis = -1)
+                        tf.nn.elu) for _ in range(self.n_head_1)], -1)
             with tf.variable_scope('layer2'):            
                 output = tf.add_n([self.gat_layer(h_out, self.out_dim, None) \
                          for _ in range(self.n_head_2)]) / self.n_head_2
@@ -75,11 +73,16 @@ class GAT(GNN): #2 layers
     def gat_layer(self, _input, out_dim, act):
         """A layer of GAT."""
         
+        #(N, in_dim) ==> (1, N, in_dim)
         _input = tf.expand_dims(_input, 0)
+        #(1, N, in_dim) conv (out_dim, 1) ==> (1, N, out_dim)
         fts = tf.layers.conv1d(_input, out_dim, 1, use_bias = False)
+        #(1, N, out_dim) conv (1, 1) ==> (1, N, 1)
         f_1 = tf.layers.conv1d(fts, 1, 1)
         f_2 = tf.layers.conv1d(fts, 1, 1)
+        #(1, N, 1) + (1, 1, N) ==> (1, N, N) 
         logits = f_1 + tf.transpose(f_2, [0, 2, 1])
+        #(1, N, N) * (1, N, out_dim) ==> (1, N, out_dim) ==> (N, out_dim)
         coefs = tf.nn.dropout(tf.nn.softmax(tf.nn.leaky_relu(logits) + \
                                             self.bias), self.keep)
         out = tf.matmul(coefs, tf.nn.dropout(fts, self.keep))

@@ -1,7 +1,7 @@
 import numpy as np
 import networkx as nx
 import scipy.sparse as sp
-import tensorflow.compat.v1 as tf
+import tensorflow as tf
 from GNN import GNN
 
 
@@ -45,13 +45,12 @@ class GCN(GNN): #2 layers
         A = A.dot(mat_inv_sqrt).transpose().dot(mat_inv_sqrt).tocoo()
         return np.vstack((A.row, A.col)).transpose(), A.data, A.shape
     
-            
+
     def gnn_layer(self):
         """A layer of GCN structure."""
         
+        self.input = tf.sparse_placeholder(tf.float32)
         self.support = tf.sparse_placeholder(tf.float32)
-        self.input = tf.sparse_placeholder(tf.float32, shape = \
-                                           [self.n_node, self.in_dim])
         self.feed_dict = {self.input: self.X, self.support: self.A}
             
         with tf.variable_scope('GCN'):

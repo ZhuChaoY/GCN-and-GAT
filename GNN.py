@@ -3,7 +3,7 @@ import time
 import pickle
 import numpy as np
 import scipy.sparse as sp
-import tensorflow.compat.v1 as tf
+import tensorflow as tf
 
 
 class GNN(): #2 layers
@@ -133,17 +133,18 @@ class GNN(): #2 layers
                       ' {:^6.2f} {:^6.2f}'.format(ep + 1, train_loss,
                       train_acc, dev_loss, dev_acc, _t - t1, _t - t0))
                 t1 = _t
-        
-            if ep == 0 or dev_loss < KPI[-1]:
+            
+            kpi = round(dev_loss, 5)
+            if ep == 0 or kpi < KPI[-1]:
                 if len(temp_kpi) > 0:
                     KPI.extend(temp_kpi)
                     temp_kpi = []
-                KPI.append(dev_loss)
+                KPI.append(kpi)
             else:
                 if len(temp_kpi) == self.earlystop:
                     break
                 else:
-                    temp_kpi.append(dev_loss)
+                    temp_kpi.append(kpi)
                     
         best_ep = len(KPI)
         if best_ep != eps:
@@ -182,8 +183,8 @@ class GNN(): #2 layers
             if i == 0:       
                 print('\n    *Hidden Dim     : {}'.format(self.h_dim))
                 if 'n_head_1' in self.args:
-                    print('    *Head of layer1: {}'.format(self.n_head_1))
-                    print('    *Head of layer2: {}'.format(self.n_head_2))
+                    print('    *Head of layer1 : {}'.format(self.n_head_1))
+                    print('    *Head of layer2 : {}'.format(self.n_head_2))
                 print('    *Drop Out Rate  : {}'.format(self.dropout))
                 print('    *L2 Rate        : {}'.format(self.l2))
                 print('    *Learning Rate  : {}'.format(self.l_r))
