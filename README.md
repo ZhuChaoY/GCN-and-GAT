@@ -24,5 +24,5 @@ python Run_GCN.py --dataset pubmed --h_dim 16 --dropout 0.5 --l2 5e-4 --l_r 1e-2
 python Run_GAT.py --dataset citeseer --h_dim 8 --n_head_1 8 --n_head_2 1 --n_hop 2 --dropout 0.6 --l2 5e-4 --l_r 5e-3
 ```
 ```
-python Run_GAT.py --dataset cora --h_dim 8 --n_head_1 8 --n_head_2 1 --n_hop1 --dropout 0.6 --l2 5e-4 --l_r 5e-3
+python Run_GAT.py --dataset cora --h_dim 8 --n_head_1 8 --n_head_2 1 --n_hop 1 --dropout 0.6 --l2 5e-4 --l_r 5e-3
 ```
