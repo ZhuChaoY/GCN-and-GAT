@@ -185,6 +185,7 @@ class GNN(): #2 layers
                 if 'n_head_1' in self.args:
                     print('    *Head of layer1 : {}'.format(self.n_head_1))
                     print('    *Head of layer2 : {}'.format(self.n_head_2))
+                    print('    *Number of Hop  : {}'.format(self.n_hop))
                 print('    *Drop Out Rate  : {}'.format(self.dropout))
                 print('    *L2 Rate        : {}'.format(self.l2))
                 print('    *Learning Rate  : {}'.format(self.l_r))

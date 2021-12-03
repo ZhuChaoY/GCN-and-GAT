@@ -37,9 +37,11 @@ class GAT(GNN): #2 layers
     
 
     def get_B(self):
-        """Get adjacency matrix bias with  neiborhood."""
+        """Get adjacency matrix bias with n_hop neiborhood."""
         
-        B = np.matmul(np.eye(self.n_node), (self.A + np.eye(self.n_node)))
+        B = np.eye(self.n_node)
+        for _ in range(self.n_hop):
+            B = np.matmul(B, self.A + np.eye(self.n_node))
         for i in range(self.n_node):
             for j in range(self.n_node):
                 if B[i, j] > 0.0:
