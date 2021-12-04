@@ -78,6 +78,21 @@ class GNN(): #2 layers
         self.test_y = self.get_y(test_range)
     
     
+    def get_X(self, test_reorder, test_range):
+        """
+        Get feature matrix, row-normalize and convert to tuple representation.
+        """
+        
+        X = sp.vstack((self.allx, self.tx)).tolil()
+        X[test_reorder, :] = X[test_range, :]
+        rowsum = np.array(X.sum(1))
+        r_inv = np.power(rowsum, -1).flatten()
+        r_inv[np.isinf(r_inv)] = 0.0
+        r_mat_inv = sp.diags(r_inv)
+        X = r_mat_inv.dot(X).tocoo()
+        return np.vstack((X.row, X.col)).transpose(), X.data, X.shape
+    
+    
     def get_m(self, key_range):
         """Get mask indexes, normalized to mean 1."""
         

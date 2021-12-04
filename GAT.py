@@ -1,6 +1,5 @@
 import numpy as np
 import networkx as nx
-import scipy.sparse as sp
 import tensorflow as tf
 from GNN import GNN
 
@@ -14,19 +13,6 @@ class GAT(GNN): #2 layers
               '==' * 4)  
         self.load_data()
         self.B = self.get_B()
-
-    
-    def get_X(self, test_reorder, test_range):
-        """Get feature matrix, row-normalize."""
-        
-        X = sp.vstack((self.allx, self.tx)).tolil()
-        X[test_reorder, :] = X[test_range, :]
-        rowsum = np.array(X.sum(1))
-        r_inv = np.power(rowsum, -1).flatten()
-        r_inv[np.isinf(r_inv)] = 0.0
-        r_mat_inv = sp.diags(r_inv)
-        X = r_mat_inv.dot(X)
-        return X.todense()
 
 
     def get_A(self):
@@ -54,40 +40,60 @@ class GAT(GNN): #2 layers
     def gnn_layer(self):
         """A layer of GAT structure."""
         
+        self.input = tf.sparse_placeholder(tf.float32)
         self.bias = tf.placeholder(tf.float32, [self.n_node, self.n_node])
-        self.input = tf.placeholder(tf.float32, [self.n_node, self.in_dim])
         self.feed_dict = {self.input: self.X, self.bias: self.B}
         
         with tf.variable_scope('GAT'):
             with tf.variable_scope('layer1'):
-                h_out = tf.concat([self.gat_layer(self.input, self.h_dim,
-                        tf.nn.elu) for _ in range(self.n_head_1)], -1)
-            with tf.variable_scope('layer2'):            
-                output = tf.add_n([self.gat_layer(h_out, self.out_dim, None) \
-                         for _ in range(self.n_head_2)]) / self.n_head_2
+                h_out = []
+                for i in range(self.n_head_1):
+                    with tf.variable_scope('head_{}'.format(i + 1)):
+                        h_out.append(self.gat_layer(self.input, self.in_dim,
+                                     self.h_dim, tf.nn.elu, True))   
+                h_out = tf.concat(h_out, -1)
+            with tf.variable_scope('layer2'):    
+                output = []
+                for i in range(self.n_head_2):
+                    with tf.variable_scope('head_{}'.format(i + 1)):
+                        output.append(self.gat_layer(h_out, self.h_dim * \
+                                     self.n_head_1, self.out_dim, None, False))
+                output = tf.add_n(output) / self.n_head_2
                 
-        loss = tf.add_n([tf.nn.l2_loss(v) for v in tf.trainable_variables() if
-                         'kernel' in v.name])
+        loss = tf.add_n([tf.nn.l2_loss(v) for v in tf.trainable_variables()])
         
         return output, loss
     
 
-    def gat_layer(self, _input, out_dim, act):
+    def gat_layer(self, _input, in_dim, out_dim, act, is_sparse):
         """A layer of GAT."""
         
-        #(N, in_dim) ==> (1, N, in_dim)
-        _input = tf.expand_dims(_input, 0)
-        #(1, N, in_dim) conv (out_dim, 1) ==> (1, N, out_dim)
-        fts = tf.layers.conv1d(_input, out_dim, 1, use_bias = False)
-        #(1, N, out_dim) conv (1, 1) ==> (1, N, 1)
-        f_1 = tf.layers.conv1d(fts, 1, 1)
-        f_2 = tf.layers.conv1d(fts, 1, 1)
-        #(1, N, 1) + (1, 1, N) ==> (1, N, N) 
-        logits = f_1 + tf.transpose(f_2, [0, 2, 1])
-        #(1, N, N) * (1, N, out_dim) ==> (1, N, out_dim) ==> (N, out_dim)
-        coefs = tf.nn.dropout(tf.nn.softmax(tf.nn.leaky_relu(logits) + \
-                                            self.bias), self.keep)
-        out = tf.matmul(coefs, tf.nn.dropout(fts, self.keep))
+        K1 = np.sqrt(6.0 / (in_dim + out_dim))
+        w0 = tf.get_variable('weight_0', initializer = \
+             tf.random_uniform([in_dim, out_dim], -K1, K1))
+        
+        #(N, in_dim) * (in_dim, out_dim) ==> (N, out_dim)
+        if is_sparse:
+            e = tf.sparse_tensor_dense_matmul(_input, w0)
+        else:
+            e = tf.matmul(_input, w0)
+        
+        K2 = np.sqrt(6.0 / (out_dim + 1))
+        w1 = tf.get_variable('weight_1', initializer = \
+             tf.random_uniform([out_dim, 1], -K2, K2))
+        w2 = tf.get_variable('weight_2', initializer = \
+             tf.random_uniform([out_dim, 1], -K2, K2))
+            
+        #(N, out_dim) * (out_dim, 1) ==> (N, 1) + (1, N) ==> (N, N)
+        e1 = tf.matmul(e, w1)
+        e2 = tf.matmul(e, w2)
+        logits = e1 + tf.transpose(e2, [1, 0])
+        
+        #(N, N) * (N, out_dim) ==> (N, out_dim)
+        a = tf.nn.dropout(tf.nn.softmax(tf.nn.leaky_relu(logits) + \
+                                        self.bias), self.keep)
+        out = tf.matmul(a, tf.nn.dropout(e, self.keep))
+        
         if act:
             out = act(out)
         return tf.squeeze(out)
