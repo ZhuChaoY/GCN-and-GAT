@@ -14,6 +14,8 @@ parser.add_argument('--n_head_2', type = int, default = 1,
                     help = 'number of head of layer2')
 parser.add_argument('--n_hop', type = int, default = 1,
                     help = 'number of hop')
+parser.add_argument('--att_batch_size', type = int, default = None,
+                    help = 'batch size of attention layer')
 parser.add_argument('--dropout', type = float, default = 0.6, 
                     help = 'dropout rate')
 parser.add_argument('--l2', type = float, default = 5e-4,

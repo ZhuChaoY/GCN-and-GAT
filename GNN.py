@@ -2,8 +2,8 @@ import re
 import time
 import pickle
 import numpy as np
-import scipy.sparse as sp
 import tensorflow as tf
+import scipy.sparse as sp
 
 
 class GNN(): #2 layers
@@ -112,12 +112,14 @@ class GNN(): #2 layers
         """Common structure of GCN and GAT."""
         
         tf.reset_default_graph()
+        self.input = tf.sparse_placeholder(tf.float32)
         self.label = tf.placeholder(tf.float32, [self.n_node, self.out_dim])
         self.mask = tf.placeholder(tf.float32, [self.n_node])
         self.keep = tf.placeholder(tf.float32)
         
-        output, loss = self.gnn_layer()                            
+        output = self.gnn_layer()                            
 
+        loss = tf.add_n([tf.nn.l2_loss(v) for v in tf.trainable_variables()])
         self.loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits( \
                     logits = output, labels = self.label) * self.mask) + \
                     self.l2 * loss

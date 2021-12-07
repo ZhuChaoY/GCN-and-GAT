@@ -1,7 +1,7 @@
 import numpy as np
 import networkx as nx
-import scipy.sparse as sp
 import tensorflow as tf
+import scipy.sparse as sp
 from GNN import GNN
 
 
@@ -34,7 +34,6 @@ class GCN(GNN): #2 layers
     def gnn_layer(self):
         """A layer of GCN structure."""
         
-        self.input = tf.sparse_placeholder(tf.float32)
         self.support = tf.sparse_placeholder(tf.float32)
         self.feed_dict = {self.input: self.X, self.support: self.A}
             
@@ -45,13 +44,11 @@ class GCN(GNN): #2 layers
             with tf.variable_scope('layer2'):
                 output = self.gcn_layer(h_out, self.h_dim, self.out_dim,
                                         None, False)
-                            
-        loss = tf.add_n([tf.nn.l2_loss(v) for v in tf.trainable_variables()])
             
-        return output, loss
+        return output
 
     
-    def gcn_layer(self, _input, in_dim, out_dim, act, is_sparse):
+    def gcn_layer(self, X, in_dim, out_dim, act, is_sparse):
         """A layer of GCN."""
         
         K = np.sqrt(6.0 / (in_dim + out_dim))
@@ -59,9 +56,9 @@ class GCN(GNN): #2 layers
             tf.random_uniform([in_dim, out_dim], -K, K))
         
         if is_sparse:
-            tmp = tf.sparse_tensor_dense_matmul(_input, w)
+            tmp = tf.sparse_tensor_dense_matmul(X, w)
         else:
-            tmp = tf.matmul(_input, w)
+            tmp = tf.matmul(X, w)
         out = tf.sparse_tensor_dense_matmul(self.support, tmp)
         
         if act:
